@@ -17,19 +17,21 @@ class MsnLogParser(MsnLogParser):
 	def parse(self, lines):
 		convo= MsnConversation()
 		for line in lines:
+			print line
 			if line[0:2]=='|"':
 					convo.addMessage(self.amsn_line(line))
 			else:
 				if not line=='\n':
-					raise Exception("Can't parse line: "+line+'"')
+						#Assume the line is a chat text continuation for the last message
+						convo.messages[-1].text+=line
 		return [convo]
 
 
 	def amsn_line(self, line):
 		splitline= line.split('|"')[1:]
-		if splitline[0][:5]=='LRED[':
+		if splitline[0][:4]=='LRED':
 			return self.event(splitline)
-		elif splitline[0][:5]=='LGRA[':
+		elif splitline[0][:4]=='LGRA':
 			return self.message(splitline)
 		else:
 			print "splitline:"+str(splitline)
@@ -42,7 +44,6 @@ class MsnLogParser(MsnLogParser):
 		return MsnEvent(datetime.datetime.now())
 
 	def message(self, splitline):
-		print splitline
 		assert splitline[1][:5]=='LTIME'
 		assert splitline[1][15:17]==' ]'
 		assert splitline[2][:4]=='LITA'
