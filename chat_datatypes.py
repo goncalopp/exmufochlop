@@ -3,14 +3,15 @@ import itertools
 
 
 class ChatEvent():
-	def __init__(self, timestamp):
+	def __init__(self, timestamp, text=''):
 		assert isinstance(timestamp, datetime.datetime)
 		self.timestamp= timestamp
+		self.text= text
 
 class ChatMessage(ChatEvent):
 	def __init__(self, timestamp, from_fn, to_fns, text):
 		'''accepts a datetime, a "from" FriendlyName, a "to" [list of] FrienlyName'''
-		ChatEvent.__init__(self,timestamp)
+		ChatEvent.__init__(self,timestamp, text)
 		if isinstance(to_fns, FriendlyName):
 			to_fns= [to_fns]
 			
@@ -20,7 +21,6 @@ class ChatMessage(ChatEvent):
 		
 		self.from_fn= from_fn
 		self.to_fns= to_fns
-		self.text= text
 	
 	def __repr__(self):
 		return (self.timestamp.isoformat() + " | " + str(self.from_fn) + " - " + self.text)
@@ -69,7 +69,7 @@ class FriendlyName():
 		self.user=user
 
 	def __repr__(self):
-		return self.fn.encode('UTF-8')
+		return self.fn
 
 class ChatFriendlyNameUserMapper:
 	def __init__(self):

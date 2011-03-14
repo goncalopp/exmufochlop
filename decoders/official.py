@@ -1,3 +1,8 @@
+#TODO:
+#text style
+#invitation types
+#correct invitation responses representation
+
 from const import DECODER_BASECLASS
 from chat_datatypes import *
 
@@ -22,41 +27,62 @@ class OfficialXMLParser(DECODER_BASECLASS):
 	
 	
 	def decode(self, lines):
-		sessions= {}	#dictionary of sessionnumeber, list_of_messages
+		self.sessions= {}	#dictionary of sessionnumeber, list_of_messages
 		xmldoc = minidom.parseString("".join(lines))
 		
 		logs_xml= xmldoc.getElementsByTagName('Log')
 		assert len(logs_xml)==1
 		log_xml= logs_xml[0]
-
-		messages_xml= log_xml.getElementsByTagName('Message')
-		for message_xml in messages_xml:
-			session_number= int(message_xml.getAttribute('SessionID'))
-			if not session_number in sessions:
-				sessions[session_number]=[]
-			msnmessage= self.xmlmessageToMsnMessage(message_xml)
-			sessions[session_number].append(msnmessage)
 		
-		conversations= [ChatConversation(sessions[ml]) for ml in sessions.keys()]
+		for entry_xml in log_xml.childNodes:
+			event= self.addXmlEvent(entry_xml)
+		
+		conversations= [ChatConversation(self.sessions[ml]) for ml in self.sessions.keys()]
 		return ChatLog(conversations)
-	
-	def xmlmessageToMsnMessage(self, xmlmessage):
-		datetime_xml= xmlmessage.getAttribute('DateTime')
-		senders_xml = xmlmessage.getElementsByTagName('From')
-		receivers_xml = xmlmessage.getElementsByTagName('To')
+
+	def addXmlEvent(self, xml):
+		session_number= int(xml.getAttribute('SessionID'))
+		if not session_number in self.sessions:
+			self.sessions[session_number]=[]
+		msnevent= self.xmlEventToChatEvent(xml)
+		self.sessions[session_number].append(msnevent)
 		
-		timestamp= datetime.datetime.strptime(datetime_xml, "%Y-%m-%dT%H:%M:%S.%fZ")
-		sender_fns =   attribute_list(senders_xml[0], 'User', 'FriendlyName')
-		receiver_fns = attribute_list(receivers_xml[0], 'User', 'FriendlyName')
-		text= xmlmessage.getElementsByTagName('Text')[0].firstChild.nodeValue
-		text= text.encode('UTF-8')
-		
-		assert len(senders_xml)==1	#only one "From" section
-		assert len(receivers_xml)==1	#only one "To" section
+	def xmlEventToChatEvent(self, xml):
+		if xml.tagName=="Message":
+			return self.message(xml)
+		elif xml.tagName=="Invitation":
+			return self.invitation(xml)
+		elif xml.tagName=="InvitationResponse":
+			return self.invitation(xml)
+		else:
+			raise Exception('unrecognized element: "'+xml.tagName+'"')
+
+	def message(self, xmlmessage):
+		timestamp, text, sender_fns, receiver_fns= self.common_atributes_and_elements(xmlmessage)
 		assert len(sender_fns)==1	#only one sender
-		
+		assert len(receiver_fns)>=1	#one or more receivers
 		message= self.createmessage(timestamp, sender_fns[0], receiver_fns, text)
 		return message
+
+	def common_atributes_and_elements(self, xml):
+		'''returns timestamp, text, sender_fn and receivers_fns, if available'''
+		datetime_xml= xml.getAttribute('DateTime')
+		timestamp= datetime.datetime.strptime(datetime_xml, "%Y-%m-%dT%H:%M:%S.%fZ")
+		
+		senders_xml = xml.getElementsByTagName('From')
+		receivers_xml = xml.getElementsByTagName('To')
+		sender_fns = attribute_list(senders_xml[0], 'User', 'FriendlyName') if len(senders_xml) else []
+		receiver_fns = attribute_list(receivers_xml[0], 'User', 'FriendlyName') if len(receivers_xml) else []
+		map(lambda a:a.encode('UTF-8'), sender_fns)
+		map(lambda a:a.encode('UTF-8'), receiver_fns)
+		
+		text= xml.getElementsByTagName('Text')[0].firstChild.nodeValue
+		text= text.encode('UTF-8')
+		return (timestamp, text, sender_fns, receiver_fns)
+		
+	def invitation(self, xmlmessage):
+		timestamp, text, sender_fns, receiver_fns= self.common_atributes_and_elements(xmlmessage)
+		return ChatEvent(timestamp, text)
 	
 	
 	
