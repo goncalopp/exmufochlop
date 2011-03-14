@@ -1,15 +1,16 @@
 import datetime
 import itertools
 
-class MsnEvent():
+
+class ChatEvent():
 	def __init__(self, date):
 		assert isinstance(date, datetime.datetime)
 		self.date= date
 
-class MsnMessage(MsnEvent):
+class ChatMessage(ChatEvent):
 	def __init__(self, date, from_fn, to_fns, text):
 		'''accepts a date, a "from" FriendlyName, a "to" [list of] FrienlyName'''
-		MsnEvent.__init__(self,date)
+		ChatEvent.__init__(self,date)
 		if isinstance(to_fns, FriendlyName):
 			to_fns= [to_fns]
 			
@@ -25,23 +26,26 @@ class MsnMessage(MsnEvent):
 		return (self.date.isoformat() + " | " + str(self.from_fn) + " - " + self.text)
 
 		
-class MsnConversation():
+class ChatConversation():
 	def __init__(self, messages=[]):
-		assert all([isinstance(m, MsnEvent) for m in messages])
+		assert all([isinstance(m, ChatEvent) for m in messages])
 		
 		self.messages= messages
 		#self.participants= set(itertools.chain(*[m.users_involved() for m in messages]))
 	
 	def addMessage(self, message):
-		assert isinstance(message, MsnEvent)
+		assert isinstance(message, ChatEvent)
 		#self.participants= self.participants.union(message.users_involved())
 		self.messages.append(message)
 
 	def __repr__(self):
 		return "\n".join([str(m) for m in self.messages])
 
+class ChatLog():
+	def __init__(self, conversation_list):
+		self.conversations= conversation_list
 
-class MsnUser():
+class ChatUser():
 	def __init__(self, realname):
 		self.name= realname
 		self.default_friendly_name= realname
@@ -53,7 +57,7 @@ class FriendlyName():
 	def __repr__(self):
 		return self.fn.encode('UTF-8')
 
-class MsnFriendlyNameUserMapper:
+class ChatFriendlyNameUserMapper:
 	def __init__(self):
 		self.str_to_fn={}
 		self.fn_to_str={}
@@ -67,4 +71,4 @@ class MsnFriendlyNameUserMapper:
 
 	def getOrAddFNs(self, string_list):
 		'''given a list of friendly names (strings), returns the associated FriendlyName's, creating them if they doesn't exist'''
-		return [self.getOrAddFN(string) for string in string_list]
+		return [self.getOrAddFN(string) for string in string_list]	

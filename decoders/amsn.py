@@ -1,20 +1,19 @@
-from abstract_parser import MsnLogParser   
-from msn_datatypes import *
+import const
+from chat_datatypes import *
 
-class MsnLogParser(MsnLogParser):
-	'''Abstract class'''
+class AMsnLogDecoder(const.DECODER_BASECLASS):
 	
 	@staticmethod
 	def format_name():
 		return "aMSN"
 	
 	@staticmethod
-	def can_parse(lines):
+	def can_decode(lines):
 		line1= lines[0].lower()
 		return '|"lred' in line1
 
 	
-	def parse(self, lines):
+	def decode(self, lines):
 		convo= MsnConversation()
 		for line in lines:
 			print line

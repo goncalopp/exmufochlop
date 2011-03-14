@@ -1,5 +1,5 @@
-from abstract_parser import MsnLogParser
-from msn_datatypes import *
+import const
+from chat_datatypes import *
 
 from xml.dom import minidom
 
@@ -10,9 +10,9 @@ def attribute_list(xml, tag, atr):
 
 
 
-class OfficialXMLParser(MsnLogParser):
+class OfficialXMLParser(const.DECODER_BASECLASS):
 	@staticmethod
-	def can_parse(lines):
+	def can_decode(lines):
 		line1, line2= lines[0].lower(), lines[1].lower()
 		return "<" in line1 and ">" in line1 and "messagelog.xsl" in line2
 		
@@ -21,9 +21,9 @@ class OfficialXMLParser(MsnLogParser):
 		return "Official client XML"
 	
 	
-	def parse(self, lines):
-		mapper= MsnFriendlyNameUserMapper()
-		current_convo= MsnConversation()
+	def decode(self, lines):
+		mapper= ChatFriendlyNameUserMapper()
+		current_convo= ChatConversation()
 		list_of_convos= [current_convo]
 		
 		xml= "".join(lines)
@@ -36,7 +36,7 @@ class OfficialXMLParser(MsnLogParser):
 				msnmessage= self.xmlmessageToMsnMessage(message_xml)
 				current_convo.addMessage(msnmessage)
 		
-		return list_of_convos
+		return ChatLog(list_of_convos)
 	
 	def xmlmessageToMsnMessage(self, xmlmessage):
 		datetime_xml= xmlmessage.getAttribute('DateTime')
