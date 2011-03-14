@@ -3,14 +3,14 @@ import itertools
 
 
 class ChatEvent():
-	def __init__(self, date):
-		assert isinstance(date, datetime.datetime)
-		self.date= date
+	def __init__(self, timestamp):
+		assert isinstance(timestamp, datetime.datetime)
+		self.timestamp= timestamp
 
 class ChatMessage(ChatEvent):
-	def __init__(self, date, from_fn, to_fns, text):
-		'''accepts a date, a "from" FriendlyName, a "to" [list of] FrienlyName'''
-		ChatEvent.__init__(self,date)
+	def __init__(self, timestamp, from_fn, to_fns, text):
+		'''accepts a datetime, a "from" FriendlyName, a "to" [list of] FrienlyName'''
+		ChatEvent.__init__(self,timestamp)
 		if isinstance(to_fns, FriendlyName):
 			to_fns= [to_fns]
 			
@@ -23,14 +23,18 @@ class ChatMessage(ChatEvent):
 		self.text= text
 	
 	def __repr__(self):
-		return (self.date.isoformat() + " | " + str(self.from_fn) + " - " + self.text)
+		return (self.timestamp.isoformat() + " | " + str(self.from_fn) + " - " + self.text)
 
 		
 class ChatConversation():
-	def __init__(self, messages=[]):
-		assert all([isinstance(m, ChatEvent) for m in messages])
-		
-		self.messages= messages
+	def __init__(self, list_of_messages):
+		assert all([isinstance(m, ChatEvent) for m in list_of_messages])
+		assert len(list_of_messages)>0
+		self.messages= list_of_messages
+		self.messages.sort(key=lambda m:m.timestamp)
+
+		#timestamp of converstion is timestamp of first message
+		self.timestamp= self.messages[0].timestamp	
 		#self.participants= set(itertools.chain(*[m.users_involved() for m in messages]))
 	
 	def addMessage(self, message):
