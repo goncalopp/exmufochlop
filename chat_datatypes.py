@@ -55,11 +55,18 @@ class ChatLog():
 class ChatUser():
 	def __init__(self, realname):
 		self.name= realname
-		self.default_friendly_name= realname
+		self.fn_list=[]
+	
+	def associateFrindlyName(self, fn):
+		if fn.user!=None:
+			fn.user.fn_list.remove(fn)
+		fn.user=self
+		self.fn_list.append(fn)
 
 class FriendlyName():
-	def __init__(self, string):
-		self.fn= string
+	def __init__(self, fn_string, user=None):
+		self.fn= fn_string
+		self.user=user
 
 	def __repr__(self):
 		return self.fn.encode('UTF-8')
@@ -67,8 +74,6 @@ class FriendlyName():
 class ChatFriendlyNameUserMapper:
 	def __init__(self):
 		self.str_to_fn={}
-		self.fn_to_str={}
-		self.fn_to_user= {}
 
 	def getOrAddFN(self, string):
 		'''given a friendly name (string), returns the associated FriendlyName, creating one if it doesn't exist'''
