@@ -1,5 +1,5 @@
 #if you're creating a parser, your class must descend from const.const.DECODER_BASECLASS
-#import const
+#from const import DECODER_BASECLASS
 from chat_datatypes import *
 
 class ChatLogDecoder():

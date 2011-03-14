@@ -1,7 +1,7 @@
-import const
+from const import DECODER_BASECLASS
 from chat_datatypes import *
 
-class AMsnLogDecoder(const.DECODER_BASECLASS):
+class AMsnLogDecoder(DECODER_BASECLASS):
 	
 	@staticmethod
 	def format_name():
@@ -14,16 +14,16 @@ class AMsnLogDecoder(const.DECODER_BASECLASS):
 
 	
 	def decode(self, lines):
-		convo= MsnConversation()
+		message_list=[] 
 		for line in lines:
 			print line
 			if line[0:2]=='|"':
-					convo.addMessage(self.amsn_line(line))
+					message_list.append(self.amsn_line(line))
 			else:
 				if not line=='\n':
 						#Assume the line is a chat text continuation for the last message
-						convo.messages[-1].text+=line
-		return [convo]
+						message_list[-1].text+=line
+		return [message_list()]
 
 
 	def amsn_line(self, line):

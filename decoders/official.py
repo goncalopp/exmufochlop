@@ -1,4 +1,4 @@
-import const
+from const import DECODER_BASECLASS
 from chat_datatypes import *
 
 from xml.dom import minidom
@@ -10,7 +10,7 @@ def attribute_list(xml, tag, atr):
 
 
 
-class OfficialXMLParser(const.DECODER_BASECLASS):
+class OfficialXMLParser(DECODER_BASECLASS):
 	@staticmethod
 	def can_decode(lines):
 		line1, line2= lines[0].lower(), lines[1].lower()
@@ -23,8 +23,7 @@ class OfficialXMLParser(const.DECODER_BASECLASS):
 	
 	def decode(self, lines):
 		mapper= ChatFriendlyNameUserMapper()
-		current_convo= ChatConversation()
-		list_of_convos= [current_convo]
+		message_list=[]
 		
 		xml= "".join(lines)
 		xmldoc = minidom.parseString(xml)
@@ -34,9 +33,9 @@ class OfficialXMLParser(const.DECODER_BASECLASS):
 			messages_xml= log_xml.getElementsByTagName('Message')
 			for message_xml in messages_xml:
 				msnmessage= self.xmlmessageToMsnMessage(message_xml)
-				current_convo.addMessage(msnmessage)
+				message_list.append(msnmessage)
 		
-		return ChatLog(list_of_convos)
+		return ChatLog([ChatConversation(message_list)])
 	
 	def xmlmessageToMsnMessage(self, xmlmessage):
 		datetime_xml= xmlmessage.getAttribute('DateTime')
