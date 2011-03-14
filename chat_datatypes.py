@@ -48,6 +48,9 @@ class ChatConversation():
 class ChatLog():
 	def __init__(self, conversation_list):
 		self.conversations= conversation_list
+	
+	def __repr__(self):
+		return "Chat log with the following conversation dates:\n"+"\n".join([str(c.timestamp) for c in self.conversations])
 
 class ChatUser():
 	def __init__(self, realname):

@@ -22,20 +22,23 @@ class OfficialXMLParser(DECODER_BASECLASS):
 	
 	
 	def decode(self, lines):
-		mapper= ChatFriendlyNameUserMapper()
-		message_list=[]
+		sessions= {}	#dictionary of sessionnumeber, list_of_messages
+		xmldoc = minidom.parseString("".join(lines))
 		
-		xml= "".join(lines)
-		xmldoc = minidom.parseString(xml)
 		logs_xml= xmldoc.getElementsByTagName('Log')
 		assert len(logs_xml)==1
-		for log_xml in logs_xml:
-			messages_xml= log_xml.getElementsByTagName('Message')
-			for message_xml in messages_xml:
-				msnmessage= self.xmlmessageToMsnMessage(message_xml)
-				message_list.append(msnmessage)
+		log_xml= logs_xml[0]
+
+		messages_xml= log_xml.getElementsByTagName('Message')
+		for message_xml in messages_xml:
+			session_number= int(message_xml.getAttribute('SessionID'))
+			if not session_number in sessions:
+				sessions[session_number]=[]
+			msnmessage= self.xmlmessageToMsnMessage(message_xml)
+			sessions[session_number].append(msnmessage)
 		
-		return ChatLog([ChatConversation(message_list)])
+		conversations= [ChatConversation(sessions[ml]) for ml in sessions.keys()]
+		return ChatLog(conversations)
 	
 	def xmlmessageToMsnMessage(self, xmlmessage):
 		datetime_xml= xmlmessage.getAttribute('DateTime')

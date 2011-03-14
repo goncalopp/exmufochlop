@@ -23,4 +23,5 @@ capable= chat_codecs.capable_decoders(lines, decoders)
 print "capable decoders:\n","\n".join([d.format_name() for d in capable])
 
 decoder= capable[0]()
-print decoder.decode(lines)
+log= decoder.decode(lines)
+print log
