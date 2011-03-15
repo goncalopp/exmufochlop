@@ -36,11 +36,6 @@ class ChatConversation():
 		#timestamp of converstion is timestamp of first message
 		self.timestamp= self.messages[0].timestamp	
 		#self.participants= set(itertools.chain(*[m.users_involved() for m in messages]))
-	
-	def addMessage(self, message):
-		assert isinstance(message, ChatEvent)
-		#self.participants= self.participants.union(message.users_involved())
-		self.messages.append(message)
 
 	def __repr__(self):
 		return "\n".join([str(m) for m in self.messages])
