@@ -19,13 +19,13 @@ class ChatLogDecoder():
 		#return False
 
 	def __init__(self):
-		self.mapper= ChatFriendlyNameUserMapper()
+		self.mapper= ChatDisplayNameUserMapper()
 	
 	def decode(self, lines):
 		'''returns ChatLog'''
 		raise NotImplementedError("LogDecoder is an abstract class")
 		#return chatlog
 		
-	def createmessage(self, date, from_fn_str, to_fns_str, text):
-		'''sugar function to deal with MsnFriendlyNameUserMapper for you'''
-		return ChatMessage(date, self.mapper.getOrAddFN(from_fn_str), self.mapper.getOrAddFNs(to_fns_str), text)
+	def createmessage(self, date, from_dn_str, to_dns_str, text):
+		'''sugar function to deal with MsnDisplayNameUserMapper for you'''
+		return ChatMessage(date, self.mapper.getOrAddDN(from_dn_str), self.mapper.getOrAddDNs(to_dns_str), text)

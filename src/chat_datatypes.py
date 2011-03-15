@@ -9,21 +9,21 @@ class ChatEvent():
 		self.text= text
 
 class ChatMessage(ChatEvent):
-	def __init__(self, timestamp, from_fn, to_fns, text):
-		'''accepts a datetime, a "from" FriendlyName, a "to" [list of] FrienlyName'''
+	def __init__(self, timestamp, from_dn, to_dns, text):
+		'''accepts a datetime, a "from" DisplayName, a "to" [list of] DisplayName'''
 		ChatEvent.__init__(self,timestamp, text)
-		if isinstance(to_fns, FriendlyName):
-			to_fns= [to_fns]
+		if isinstance(to_dns, DisplayName):
+			to_dns= [to_dns]
 			
-		assert isinstance(from_fn, FriendlyName)
-		assert all([isinstance(fn, FriendlyName) for fn in to_fns])
+		assert isinstance(from_dn, DisplayName)
+		assert all([isinstance(dn, DisplayName) for dn in to_dns])
 		assert isinstance(text, basestring)
 		
-		self.from_fn= from_fn
-		self.to_fns= to_fns
+		self.from_dn= from_dn
+		self.to_dns= to_dns
 	
 	def __repr__(self):
-		return (self.timestamp.isoformat() + " | " + str(self.from_fn) + " - " + self.text)
+		return (self.timestamp.isoformat() + " | " + str(self.from_dn) + " - " + self.text)
 
 		
 class ChatConversation():
@@ -55,32 +55,32 @@ class ChatLog():
 class ChatUser():
 	def __init__(self, realname):
 		self.name= realname
-		self.fn_list=[]
+		self.dn_list=[]
 	
-	def associateFrindlyName(self, fn):
-		if fn.user!=None:
-			fn.user.fn_list.remove(fn)
-		fn.user=self
-		self.fn_list.append(fn)
+	def associateDisplayName(self, dn):
+		if dn.user!=None:
+			dn.user.dn_list.remove(dn)
+		dn.user=self
+		self.dn_list.append(dn)
 
-class FriendlyName():
-	def __init__(self, fn_string, user=None):
-		self.fn= fn_string
+class DisplayName():
+	def __init__(self, dn_string, user=None):
+		self.dn= dn_string
 		self.user=user
 
 	def __repr__(self):
-		return self.fn
+		return self.dn
 
-class ChatFriendlyNameUserMapper:
+class ChatDisplayNameUserMapper:
 	def __init__(self):
-		self.str_to_fn={}
+		self.str_to_dn={}
 
-	def getOrAddFN(self, string):
-		'''given a friendly name (string), returns the associated FriendlyName, creating one if it doesn't exist'''
-		if not string in self.str_to_fn:
-			self.str_to_fn[string]=FriendlyName(string)
-		return self.str_to_fn[string]
+	def getOrAddDN(self, string):
+		'''given a display name (string), returns the associated DisplayName, creating one if it doesn't exist'''
+		if not string in self.str_to_dn:
+			self.str_to_dn[string]=DisplayName(string)
+		return self.str_to_dn[string]
 
-	def getOrAddFNs(self, string_list):
-		'''given a list of friendly names (strings), returns the associated FriendlyName's, creating them if they doesn't exist'''
-		return [self.getOrAddFN(string) for string in string_list]	
+	def getOrAddDNs(self, string_list):
+		'''given a list of display names (strings), returns the associated DisplayName's, creating them if they doesn't exist'''
+		return [self.getOrAddDN(string) for string in string_list]	

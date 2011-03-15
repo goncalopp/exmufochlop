@@ -58,30 +58,30 @@ class OfficialXMLParser(DECODER_BASECLASS):
 			raise Exception('unrecognized element: "'+xml.tagName+'"')
 
 	def message(self, xmlmessage):
-		timestamp, text, sender_fns, receiver_fns= self.common_atributes_and_elements(xmlmessage)
-		assert len(sender_fns)==1	#only one sender
-		assert len(receiver_fns)>=1	#one or more receivers
-		message= self.createmessage(timestamp, sender_fns[0], receiver_fns, text)
+		timestamp, text, sender_dns, receiver_dns= self.common_atributes_and_elements(xmlmessage)
+		assert len(sender_dns)==1	#only one sender
+		assert len(receiver_dns)>=1	#one or more receivers
+		message= self.createmessage(timestamp, sender_dns[0], receiver_dns, text)
 		return message
 
 	def common_atributes_and_elements(self, xml):
-		'''returns timestamp, text, sender_fn and receivers_fns, if available'''
+		'''returns timestamp, text, sender_dn and receivers_dns, if available'''
 		datetime_xml= xml.getAttribute('DateTime')
 		timestamp= datetime.datetime.strptime(datetime_xml, "%Y-%m-%dT%H:%M:%S.%fZ")
 		
 		senders_xml = xml.getElementsByTagName('From')
 		receivers_xml = xml.getElementsByTagName('To')
-		sender_fns = attribute_list(senders_xml[0], 'User', 'FriendlyName') if len(senders_xml) else []
-		receiver_fns = attribute_list(receivers_xml[0], 'User', 'FriendlyName') if len(receivers_xml) else []
-		map(lambda a:a.encode('UTF-8'), sender_fns)
-		map(lambda a:a.encode('UTF-8'), receiver_fns)
+		sender_dns = attribute_list(senders_xml[0], 'User', 'FriendlyName') if len(senders_xml) else []
+		receiver_dns = attribute_list(receivers_xml[0], 'User', 'FriendlyName') if len(receivers_xml) else []
+		map(lambda a:a.encode('UTF-8'), sender_dns)
+		map(lambda a:a.encode('UTF-8'), receiver_dns)
 		
 		text= xml.getElementsByTagName('Text')[0].firstChild.nodeValue
 		text= text.encode('UTF-8')
-		return (timestamp, text, sender_fns, receiver_fns)
+		return (timestamp, text, sender_dns, receiver_dns)
 		
 	def invitation(self, xmlmessage):
-		timestamp, text, sender_fns, receiver_fns= self.common_atributes_and_elements(xmlmessage)
+		timestamp, text, sender_dns, receiver_dns= self.common_atributes_and_elements(xmlmessage)
 		return ChatEvent(timestamp, text)
 	
 	

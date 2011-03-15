@@ -17,7 +17,7 @@ def include_codecs_path():
 
 include_codecs_path()
 decoders= chat_codecs.get_decoder_list()
-lines= readFile('test.xml')
+lines= readFile('../test.xml')
 capable= chat_codecs.capable_decoders(lines, decoders)
 
 print "capable decoders:\n","\n".join([d.format_name() for d in capable])
