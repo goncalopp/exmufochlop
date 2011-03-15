@@ -1,0 +1,13 @@
+exmufochlop - EXtendable MUlti-FOrmat CHat LOg Parser
+
+exmufochlop, as the name indicates, is a parser for chat log files (MSN / Windows Live Messenger, AIM, Yahoo Messenger, Google Talk / Jabber / XMPP, Skype, etc...)
+
+More than a parser per se, its primary purpose is to serve as a common framework for developing new ones. It simplifies some common tasks, like username-displayname mapping, and provides a reusable model for relevant structures (Log, Event, Message, User...).
+
+This approach allows for:
+	Pluggable parsers - developing a parser is as easy as creating it's Class and putting it into the appropriate folder. exmufochlop will detect it and know when to use it
+	Codec architecture - a parser can be seen as a decoder. In this sense, it's just as easy to develop a encoder; putting a decoder and a encoder together, you have a chat log format converter.
+
+
+Why python?
+Python is easy to learn for both newcomers and old-school coders and its interpreted nature and introspection features allow for pluggable parsers (see above).
