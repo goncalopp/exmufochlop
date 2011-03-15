@@ -13,5 +13,3 @@ def choice(text, choices):
 		except:
 			pass
 	return response-1
-
-print question("why",["yes","no"])
