@@ -1,3 +1,8 @@
+#TODO:
+#offer configuration options - save local username, locale (for ascii timestamp interpretation)
+#
+#
+
 import re
 
 from const import DECODER_BASECLASS
@@ -112,8 +117,13 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 	
 	@staticmethod
 	def can_decode(lines):
-		return lines[0][:3] == '|"L' 
-	
+		return lines[0][:3] == '|"L'
+
+	def __init__(self):
+		DECODER_BASECLASS.__init__(self)
+		self.utc_offset= 1
+		self.username= "local_username"
+		
 	def decode(self, lines):
 		message_list=[]
 		last_timestamp= self.NOTIMESTAMP
@@ -124,10 +134,11 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 				m= self.extract(line)
 				if m.timestamp == self.NOTIMESTAMP:	#some events have no timestamp token...
 					m.timestamp= last_timestamp				#make them keep the timestamp of last event
+				last_timestamp= m.timestamp
 				message_list.append(m)
 		return ChatLog([ChatConversation(message_list)])
 
-	def extract_message(self, tokens, interstitials):
+	def extract_message1(self, tokens, interstitials):
 		'''a simple message, has a timestamp, a sender and a text'''
 		i= interstitials
 		assert i[0]==''
@@ -140,13 +151,29 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 		timestamp= datetime.datetime.fromtimestamp(int(tokens[1].Attribute))
 		return self.createmessage(timestamp, displayname, [], message)
 
+	def extract_message2(self, tokens, interstitials):
+		'''a simple message, has a timestamp, a sender and a text'''
+		i= interstitials
+		assert i[0]==''
+		assert i[1][:1]=='['
+		assert i[1][-2:]=='] '
+		assert i[2][-2:]==' :'
+		
+		displayname= i[3][:-2]
+		message= i[3]
+		timestamp= datetime.datetime.strptime(i[1], "[%m/%d/%y %H:%M:%S] ")
+		timestamp+= datetime.timedelta(hours= -self.utc_offset)
+		return self.createmessage(timestamp, displayname, [], message)
+
 	def extract_event1(self, tokens, interstitials):
 		'''an event with timestamp and text'''
 		i= interstitials
 		assert i[0]==''
 		assert i[1][:1]=='['
-		assert i[2]==']\n'
-		text= i[1][1:]
+		if i[2]==']\n':	#"normal" event
+			text= i[1][1:]
+		elif  i[2][-4:]==') ]\n' and i[1][-4:]==' on ':	#conference start
+			text= i[1][1:-4]+i[2][-3]+'\n'
 		timestamp= datetime.datetime.fromtimestamp(int(tokens[1].Attribute))
 		return ChatEvent(timestamp, text)
 
@@ -167,14 +194,25 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 		timestamp= datetime.datetime.fromtimestamp(int(tokens[1].Attribute))
 		text= i[3]
 		return ChatEvent(timestamp, text)
+
+	def extract_messagenotdelivered(self, tokens, interstitials):
+		'''a message-not-delivered event'''
+		i= interstitials
+		assert i[0]==''
+		assert i[1]=='['
+		assert i[2]==' ] '
+		text= i[3]+i[4]
+		return ChatEvent(self.NOTIMESTAMP, text)
 		
 	def extract(self, line):
-		print line
 		t= tokens= AmsnTokenList(line)
 		i= interstitials= tokens.getInterstitials()
 		
 		if len(t)==4 and t[0].token=='GRA' and t[1].token=='TIME' and t[2].token=='ITA' and t[3].token=='C':
-			return self.extract_message(t, i)
+			return self.extract_message1(t, i)
+		
+		if len(t)==3 and t[0].token=='GRA' and t[1].token=='ITA' and t[2].token=='NOR':
+			return self.extract_message2(t, i)
 		
 		if len(t)==2 and t[0].token=='RED' and t[1].token=='TIME':
 			return self.extract_event1(t, i)
@@ -184,7 +222,9 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 		
 		if len(t)==3 and t[0].token=='GRA' and t[1].token=='TIME' and t[2].token=='GRE':
 			return self.extract_filetransfer(t, i)
-			
+		
+		if len(t)==4 and t[0].token=='GRA' and t[1].token=='TIME' and t[2].token=='ITA' and t[3].token=='RED':
+			return self.extract_messagenotdelivered(t, i)
 		raise Exception("Could not detect line format.\nline:%s\ntokens:%s\ninterstitials:%s" % (line, tokens, interstitials))
 		
 
