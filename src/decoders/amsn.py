@@ -125,6 +125,7 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 		self.username= "local_username"
 		
 	def decode(self, lines):
+		conversation_list=[]
 		message_list=[]
 		last_timestamp= self.NOTIMESTAMP
 		for line in lines:
@@ -135,8 +136,12 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 				if m.timestamp == self.NOTIMESTAMP:	#some events have no timestamp token...
 					m.timestamp= last_timestamp				#make them keep the timestamp of last event
 				last_timestamp= m.timestamp
+				if "Conversation started on" in m.text:
+					conversation_list.append(ChatConversation(message_list))
+					message_list=[]
 				message_list.append(m)
-		return ChatLog([ChatConversation(message_list)])
+		conversation_list.append(ChatConversation(message_list))
+		return ChatLog(conversation_list)
 
 
 		
