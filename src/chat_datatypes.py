@@ -8,6 +8,10 @@ class ChatEvent():
 		self.timestamp= timestamp
 		self.text= text
 
+	def __repr__(self):
+		return (self.timestamp.isoformat() + " | " + self.text)
+
+
 class ChatMessage(ChatEvent):
 	def __init__(self, timestamp, from_dn, to_dns, text):
 		'''accepts a datetime, a "from" DisplayName, a "to" [list of] DisplayName'''
