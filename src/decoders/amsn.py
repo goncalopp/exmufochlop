@@ -138,93 +138,53 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 				message_list.append(m)
 		return ChatLog([ChatConversation(message_list)])
 
-	def extract_message1(self, tokens, interstitials):
-		'''a simple message, has a timestamp, a sender and a text'''
-		i= interstitials
-		assert i[0]==''
-		assert i[1]=='['
-		assert i[2]==' ] '
-		assert i[3][-2:]==' :'
-		
-		displayname= i[3][:-2]
-		message= i[4]
-		timestamp= datetime.datetime.fromtimestamp(int(tokens[1].Attribute))
-		return self.createmessage(timestamp, displayname, [], message)
 
-	def extract_message2(self, tokens, interstitials):
-		'''a simple message, has a timestamp, a sender and a text'''
-		i= interstitials
-		assert i[0]==''
-		assert i[1][:1]=='['
-		assert i[1][-2:]=='] '
-		assert i[2][-2:]==' :'
-		
-		displayname= i[3][:-2]
-		message= i[3]
-		timestamp= datetime.datetime.strptime(i[1], "[%m/%d/%y %H:%M:%S] ")
-		timestamp+= datetime.timedelta(hours= -self.utc_offset)
-		return self.createmessage(timestamp, displayname, [], message)
-
-	def extract_event1(self, tokens, interstitials):
-		'''an event with timestamp and text'''
-		i= interstitials
-		assert i[0]==''
-		assert i[1][:1]=='['
-		if i[2]==']\n':	#"normal" event
-			text= i[1][1:]
-		elif  i[2][-4:]==') ]\n' and i[1][-4:]==' on ':	#conference start
-			text= i[1][1:-4]+i[2][-3]+'\n'
-		timestamp= datetime.datetime.fromtimestamp(int(tokens[1].Attribute))
-		return ChatEvent(timestamp, text)
-
-	def extract_event2(self, tokens, interstitials):
-		'''an event without timestamp'''
-		i= interstitials
-		assert i[0]==''
-		assert i[1][:1]=='['
-		assert i[1][-2:]==']\n'
-		text= i[1][1:-2]+"\n"
-		return ChatEvent(self.NOTIMESTAMP, text)
-
-	def extract_filetransfer(self, tokens, interstitials):
-		'''a file transfer event'''
-		i= interstitials
-		assert i[0]==i[1]==''
-		assert i[2]==' '
-		timestamp= datetime.datetime.fromtimestamp(int(tokens[1].Attribute))
-		text= i[3]
-		return ChatEvent(timestamp, text)
-
-	def extract_messagenotdelivered(self, tokens, interstitials):
-		'''a message-not-delivered event'''
-		i= interstitials
-		assert i[0]==''
-		assert i[1]=='['
-		assert i[2]==' ] '
-		text= i[3]+i[4]
-		return ChatEvent(self.NOTIMESTAMP, text)
 		
 	def extract(self, line):
 		t= tokens= AmsnTokenList(line)
+		tn= [tok.token for tok in tokens]
 		i= interstitials= tokens.getInterstitials()
 		
-		if len(t)==4 and t[0].token=='GRA' and t[1].token=='TIME' and t[2].token=='ITA' and t[3].token=='C':
-			return self.extract_message1(t, i)
+		if tn==['GRA','TIME','ITA','C'] and i[0]=='' and i[1]=='[' and i[2]==' ] ' and i[3][-2:]==' :':
+			#a simple message, has a timestamp, a sender and a text
+			displayname= i[3][:-2]
+			message= i[4]
+			timestamp= datetime.datetime.fromtimestamp(int(tokens[1].Attribute))
+			return self.createmessage(timestamp, displayname, [], message)
+			
+		if tn==['GRA','ITA','NOR'] and i[0]=='' and i[1][-2:]=='] ' and i[2][-2:]==' :':
+			#a simple message, has a timestamp, a sender and a text
+			displayname= i[3][:-2]
+			message= i[3]
+			timestamp= datetime.datetime.strptime(i[1], "[%m/%d/%y %H:%M:%S] ")
+			timestamp+= datetime.timedelta(hours= -self.utc_offset)
+			return self.createmessage(timestamp, displayname, [], message)
 		
-		if len(t)==3 and t[0].token=='GRA' and t[1].token=='ITA' and t[2].token=='NOR':
-			return self.extract_message2(t, i)
+		if tn==['RED','TIME'] and i[0]=='' and i[1][:1]=='[':
+			#an event with timestamp and text
+			if i[2]==']\n':	#"normal" event
+				text= i[1][1:]
+			elif  i[2][-4:]==') ]\n' and i[1][-4:]==' on ':	#conference start
+				text= i[1][1:-4]+i[2][-3]+'\n'
+			timestamp= datetime.datetime.fromtimestamp(int(tokens[1].Attribute))
+			return ChatEvent(timestamp, text)
 		
-		if len(t)==2 and t[0].token=='RED' and t[1].token=='TIME':
-			return self.extract_event1(t, i)
+		if tn==['RED'] and i[0]=='' and i[1][:1]=='[' and i[1][-2:]==']\n':
+			#a chat event without timestamp
+			text= i[1][1:-2]+"\n"
+			return ChatEvent(self.NOTIMESTAMP, text)
 		
-		if len(t)==1 and t[0].token=='RED':
-			return self.extract_event2(t, i)
+		if tn==['GRA','TIME','GRE'] and i[0]==i[1]=='' and i[2]==' ':
+			#a file transfer event
+			timestamp= datetime.datetime.fromtimestamp(int(tokens[1].Attribute))
+			text= i[3]
+			return ChatEvent(timestamp, text)
 		
-		if len(t)==3 and t[0].token=='GRA' and t[1].token=='TIME' and t[2].token=='GRE':
-			return self.extract_filetransfer(t, i)
-		
-		if len(t)==4 and t[0].token=='GRA' and t[1].token=='TIME' and t[2].token=='ITA' and t[3].token=='RED':
-			return self.extract_messagenotdelivered(t, i)
+		if tn==['GRA','TIME','ITA','RED'] and i[0]=='' and i[1]=='[' and i[2]==' ] ':
+			#a message-not-delivered event'''
+			text= i[3]+i[4]
+			return ChatEvent(self.NOTIMESTAMP, text)
+			
 		raise Exception("Could not detect line format.\nline:%s\ntokens:%s\ninterstitials:%s" % (line, tokens, interstitials))
 		
 
