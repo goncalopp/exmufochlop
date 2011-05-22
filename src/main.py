@@ -15,7 +15,7 @@ def include_codecs_path():
 	sys.path.append(const.ENCODERS_FOLDER)
 	
 def decodeFile(decoders, filename):
-	lines= readFile('../test.xml')
+	lines= readFile(filename)
 	capable= chat_codecs.capable_decoders(lines, decoders)
 	format_names_list= [d.format_name() for d in capable]
 	if len(capable)<=0:
@@ -33,5 +33,6 @@ include_codecs_path()
 decoders= chat_codecs.get_decoder_list()
 
 
-log= decodeFile(decoders, '../test.xml')
-print log
+log= decodeFile(decoders, '../kairi_s_heart@hotmail.com.log')
+for con in log.conversations:
+	print con.messages[0].text

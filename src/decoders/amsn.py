@@ -121,23 +121,28 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 
 	def __init__(self):
 		DECODER_BASECLASS.__init__(self)
-		self.utc_offset= 1
+		self.utc_offset= 0
 		self.username= "local_username"
 		
 	def decode(self, lines):
 		conversation_list=[]
 		message_list=[]
 		last_timestamp= self.NOTIMESTAMP
-		for line in lines:
+		for line_number,line in enumerate(lines):
 			if line[0:3]!='|"L': #this is probably a message continuation...
 				m.text+= line				#...so append to last message
 			else:
 				m= self.extract(line)
 				if m.timestamp == self.NOTIMESTAMP:	#some events have no timestamp token...
 					m.timestamp= last_timestamp				#make them keep the timestamp of last event
+				if m.timestamp<last_timestamp and line_number>0:
+					#anachronism; happens on connection problems (message doesn't get sent at first).
+					#note this may also happen because the utc offset parameter is wrong (some dates are saved as UTC, other as local time)
+					pass
 				last_timestamp= m.timestamp
-				if "Conversation started on" in m.text:
-					conversation_list.append(ChatConversation(message_list))
+				if "Conversation started on" in m.text or "Started an Offline Instant Messaging conversation" in m.text:
+					if line_number!=0:
+						conversation_list.append(ChatConversation(message_list))
 					message_list=[]
 				message_list.append(m)
 		conversation_list.append(ChatConversation(message_list))
