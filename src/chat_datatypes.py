@@ -36,17 +36,34 @@ class ChatConversation():
 		assert len(list_of_messages)>0
 		self.messages= list_of_messages
 		self.messages.sort(key=lambda m:m.timestamp)
-
 		#timestamp of converstion is timestamp of first message
 		self.timestamp= self.messages[0].timestamp	
 		#self.participants= set(itertools.chain(*[m.users_involved() for m in messages]))
-
+	
+	def __getitem__(self, key):
+		return self.messages[key]
+	
+	def __setitem__(self, key, value):
+		self.messages[key]=value
+	
+	def __iter__(self):
+		return self.messages.__iter__()
+	
 	def __repr__(self):
 		return "\n".join([str(m) for m in self.messages])
 
 class ChatLog():
 	def __init__(self, conversation_list):
 		self.conversations= conversation_list
+	
+	def __getitem__(self, key):
+		return self.conversations[key]
+
+	def __setitem__(self, key, value):
+		self.conversations[key]=value
+
+	def __iter__(self):
+		return self.conversations.__iter__()
 	
 	def __repr__(self):
 		return "Chat log with the following conversation dates:\n"+"\n".join([str(c.timestamp) for c in self.conversations])

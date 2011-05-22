@@ -19,5 +19,5 @@ class ChatLogEncoder():
 	
 	def encode(self, chatlog):
 		'''returns a string'''
-		raise NotImplementedError("LogDecoder is an abstract class")
+		raise NotImplementedError("LogEncoder is an abstract class")
 		#return string
