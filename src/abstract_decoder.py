@@ -1,4 +1,6 @@
-#if you're creating a parser, your class must descend from const.const.DECODER_BASECLASS
+#if you're creating a decoder, your class must descend from const.DECODER_BASECLASS
+
+#uncomment the following line
 #from const import DECODER_BASECLASS
 from chat_datatypes import *
 
