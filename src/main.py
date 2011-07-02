@@ -21,4 +21,4 @@ result= encoder.encode(log)
 
 
 f=open('../result.html', 'w')
-f.write(result)
+f.write(result.encode('utf-8'))

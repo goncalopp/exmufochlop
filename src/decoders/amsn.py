@@ -125,6 +125,7 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 		
 	def decode(self, lines):
 		self.log= ChatLog()
+		lines= "\0".join(lines).decode('utf-8').split("\0")
 		last_timestamp= self.NOTIMESTAMP
 		for line_number,line in enumerate(lines):
 			if line[0:3]!='|"L': #this is probably a message continuation...

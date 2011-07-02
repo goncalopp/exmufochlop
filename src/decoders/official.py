@@ -81,11 +81,8 @@ class OfficialXMLParser(DECODER_BASECLASS):
 		receivers_xml = xml.getElementsByTagName('To')
 		sender_dns = attribute_list(senders_xml[0], 'User', 'FriendlyName') if len(senders_xml) else []
 		receiver_dns = attribute_list(receivers_xml[0], 'User', 'FriendlyName') if len(receivers_xml) else []
-		map(lambda a:a.encode('UTF-8'), sender_dns)
-		map(lambda a:a.encode('UTF-8'), receiver_dns)
-		
+
 		text= xml.getElementsByTagName('Text')[0].firstChild.nodeValue
-		text= text.encode('UTF-8')
 		return (timestamp, text, sender_dns, receiver_dns)
 		
 	def invitation(self, xmlmessage):
