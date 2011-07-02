@@ -15,6 +15,7 @@ def decodeFile(filename):
 
 
 log= decodeFile('../kairi_s_heart@hotmail.com.log')
+log.finish()
 encoder= chat_codecs.encoders[0]()
 result= encoder.encode(log)
 

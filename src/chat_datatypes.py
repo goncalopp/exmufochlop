@@ -2,6 +2,7 @@ import datetime
 import itertools
 
 
+
 class ChatEvent():
 	def __init__(self, timestamp, text=''):
 		assert isinstance(timestamp, datetime.datetime)
@@ -31,14 +32,8 @@ class ChatMessage(ChatEvent):
 
 		
 class ChatConversation():
-	def __init__(self, list_of_messages):
-		assert all([isinstance(m, ChatEvent) for m in list_of_messages])
-		assert len(list_of_messages)>0
-		self.messages= list_of_messages
-		self.messages.sort(key=lambda m:m.timestamp)
-		#timestamp of converstion is timestamp of first message
-		self.timestamp= self.messages[0].timestamp	
-		#self.participants= set(itertools.chain(*[m.users_involved() for m in messages]))
+	def __init__(self):
+		self.messages=[]
 	
 	def __getitem__(self, key):
 		return self.messages[key]
@@ -48,13 +43,24 @@ class ChatConversation():
 	
 	def __iter__(self):
 		return self.messages.__iter__()
+
+	def addEvent(self, event):
+		assert isinstance(event, ChatEvent)
+		self.messages.append(event)
+
+	def finish(self):
+		self.messages.sort(key=lambda m:m.timestamp)
+		self.start_timestamp= self.messages[0].timestamp
+		self.end_timestamp= self.messages[-1].timestamp
+		#self.participants= set(itertools.chain(*[m.users_involved() for m in messages]))
 	
 	def __repr__(self):
 		return "\n".join([str(m) for m in self.messages])
 
 class ChatLog():
-	def __init__(self, conversation_list):
-		self.conversations= conversation_list
+	def __init__(self):
+		self.conversations= []
+		self.mapper= ChatDisplayNameUserMapper()
 	
 	def __getitem__(self, key):
 		return self.conversations[key]
@@ -66,8 +72,32 @@ class ChatLog():
 		return self.conversations.__iter__()
 	
 	def __repr__(self):
-		return "Chat log with the following conversation dates:\n"+"\n".join([str(c.timestamp) for c in self.conversations])
+		return "Chat log with the following conversation dates:\n"+"\n".join([str(c.start_timestamp) for c in self.conversations])
 
+	def createConversation(self):
+		self.conversations.append( ChatConversation() )
+
+	def createMessage(self, *args, **kwargs):
+		'''adds a new message to last conversation'''
+		return self.mapper.create_message(*args, **kwargs)
+		self.conversations[-1].addEvent(m)
+
+	def createEvent(self, *args, **kwargs):
+		return ChatEvent(*args, **kwargs)
+
+	def addEvent(self, m):
+		assert isinstance(m,ChatEvent)
+		self.conversations[-1].addEvent(m)
+
+	
+	def finish(self):
+		for c in self.conversations:
+			c.finish()
+		self.start_timestamp= min([c.start_timestamp for c in self.conversations])
+		self.start_timestamp= max([c.end_timestamp for c in self.conversations])
+		
+
+	
 class ChatUser():
 	def __init__(self, realname):
 		self.name= realname
@@ -79,6 +109,8 @@ class ChatUser():
 		dn.user=self
 		self.dn_list.append(dn)
 
+
+
 class DisplayName():
 	def __init__(self, dn_string, user=None):
 		self.dn= dn_string
@@ -87,16 +119,37 @@ class DisplayName():
 	def __repr__(self):
 		return self.dn
 
+
+
+
 class ChatDisplayNameUserMapper:
 	def __init__(self):
 		self.str_to_dn={}
+		self.str_to_user={}
 
-	def getOrAddDN(self, string):
-		'''given a display name (string), returns the associated DisplayName, creating one if it doesn't exist'''
-		if not string in self.str_to_dn:
-			self.str_to_dn[string]=DisplayName(string)
-		return self.str_to_dn[string]
+	def getOrAddUser(self, username):
+		if not username in self.str_to_user:
+			self.str_to_user[username]= ChatUser(username)
+		return self.str_to_user[username]
 
-	def getOrAddDNs(self, string_list):
-		'''given a list of display names (strings), returns the associated DisplayName's, creating them if they doesn't exist'''
-		return [self.getOrAddDN(string) for string in string_list]	
+	def getOrAddDN(self, dn_string, username_str=None):
+		'''given a display name (dn_string), returns the associated
+		DisplayName, if it exists. If it doesn't, a new one is created;
+		in this case, if no username_str is given, a
+		new user will be created with the same string as the DN,
+		otherwise the DN will be associated with the given user'''
+		if not dn_string in self.str_to_dn:
+			self.str_to_dn[dn_string]= DisplayName(dn_string, self.str_to_user.get(username_str))
+		return self.str_to_dn[dn_string]
+
+	def create_message(self, date, text, from_dn_str, to_dns_str, from_user_str=None, to_users_str=None):
+		'''creates a message given DisplayNames (and possibly the matching
+		usernames) as strings'''
+		if to_users_str==None:
+			to_users_str= (None,)*len(to_dns_str)
+		assert len(to_dns_str)==len(to_users_str)
+		
+		from_dn= self.getOrAddDN(from_dn_str, from_user_str)
+		to_dns= tuple(DisplayName(d, u) for d,u in zip(to_dns_str, to_users_str))
+		return ChatMessage(date, from_dn, to_dns, text)
+

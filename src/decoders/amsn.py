@@ -122,11 +122,9 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 	def __init__(self):
 		DECODER_BASECLASS.__init__(self)
 		self.utc_offset= 0
-		self.username= "local_username"
 		
 	def decode(self, lines):
-		conversation_list=[]
-		message_list=[]
+		self.log= ChatLog()
 		last_timestamp= self.NOTIMESTAMP
 		for line_number,line in enumerate(lines):
 			if line[0:3]!='|"L': #this is probably a message continuation...
@@ -141,12 +139,9 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 					pass
 				last_timestamp= m.timestamp
 				if "Conversation started on" in m.text or "Started an Offline Instant Messaging conversation" in m.text:
-					if line_number!=0:
-						conversation_list.append(ChatConversation(message_list))
-					message_list=[]
-				message_list.append(m)
-		conversation_list.append(ChatConversation(message_list))
-		return ChatLog(conversation_list)
+					self.log.createConversation()
+				self.log.addEvent(m)
+		return self.log
 
 
 		
@@ -160,7 +155,7 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 			displayname= i[3][:-2]
 			message= i[4]
 			timestamp= datetime.datetime.fromtimestamp(int(tokens[1].Attribute))
-			return self.createmessage(timestamp, displayname, [], message)
+			return self.log.createMessage(timestamp, message, displayname, ())
 			
 		if tn==['GRA','ITA','NOR'] and i[0]=='' and i[1][-2:]=='] ' and i[2][-2:]==' :':
 			#a simple message, has a timestamp, a sender and a text
@@ -168,7 +163,7 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 			message= i[3]
 			timestamp= datetime.datetime.strptime(i[1], "[%m/%d/%y %H:%M:%S] ")
 			timestamp+= datetime.timedelta(hours= -self.utc_offset)
-			return self.createmessage(timestamp, displayname, [], message)
+			return self.log.createMessage(timestamp, message, displayname, ())
 		
 		if tn==['RED','TIME'] and i[0]=='' and i[1][:1]=='[':
 			#an event with timestamp and text
@@ -177,23 +172,23 @@ class AMsnLogDecoder(DECODER_BASECLASS):
 			elif  i[2][-4:]==') ]\n' and i[1][-4:]==' on ':	#conference start
 				text= i[1][1:-4]+i[2][-3]+'\n'
 			timestamp= datetime.datetime.fromtimestamp(int(tokens[1].Attribute))
-			return ChatEvent(timestamp, text)
+			return self.log.createEvent(timestamp, text)
 		
 		if tn==['RED'] and i[0]=='' and i[1][:1]=='[' and i[1][-2:]==']\n':
 			#a chat event without timestamp
 			text= i[1][1:-2]+"\n"
-			return ChatEvent(self.NOTIMESTAMP, text)
+			return self.log.createEvent(self.NOTIMESTAMP, text)
 		
 		if tn==['GRA','TIME','GRE'] and i[0]==i[1]=='' and i[2]==' ':
 			#a file transfer event
 			timestamp= datetime.datetime.fromtimestamp(int(tokens[1].Attribute))
 			text= i[3]
-			return ChatEvent(timestamp, text)
+			return self.log.createEvent(timestamp, text)
 		
 		if tn==['GRA','TIME','ITA','RED'] and i[0]=='' and i[1]=='[' and i[2]==' ] ':
 			#a message-not-delivered event'''
 			text= i[3]+i[4]
-			return ChatEvent(self.NOTIMESTAMP, text)
+			return self.log.createEvent(self.NOTIMESTAMP, text)
 			
 		raise Exception("Could not detect line format.\nline:%s\ntokens:%s\ninterstitials:%s" % (line, tokens, interstitials))
 		

@@ -28,6 +28,7 @@ class OfficialXMLParser(DECODER_BASECLASS):
 	
 	def decode(self, lines):
 		self.sessions= {}	#dictionary of sessionnumeber, list_of_messages
+		self.log= ChatLog()
 		xmldoc = minidom.parseString("".join(lines))
 		
 		logs_xml= xmldoc.getElementsByTagName('Log')
@@ -36,9 +37,12 @@ class OfficialXMLParser(DECODER_BASECLASS):
 		
 		for entry_xml in log_xml.childNodes:
 			event= self.addXmlEvent(entry_xml)
-		
-		conversations= [ChatConversation(self.sessions[ml]) for ml in self.sessions.keys()]
-		return ChatLog(conversations)
+
+		for conversation in self.sessions.values():
+			self.log.createConversation()
+			for m in conversation:
+				self.log.addEvent(m)
+		return self.log
 
 	def addXmlEvent(self, xml):
 		session_number= int(xml.getAttribute('SessionID'))
@@ -54,6 +58,10 @@ class OfficialXMLParser(DECODER_BASECLASS):
 			return self.invitation(xml)
 		elif xml.tagName=="InvitationResponse":
 			return self.invitation(xml)
+		elif xml.tagName=="Join":
+			return self.invitation(xml)
+		elif xml.tagName=="Leave":
+			return self.invitation(xml)
 		else:
 			raise Exception('unrecognized element: "'+xml.tagName+'"')
 
@@ -61,7 +69,7 @@ class OfficialXMLParser(DECODER_BASECLASS):
 		timestamp, text, sender_dns, receiver_dns= self.common_atributes_and_elements(xmlmessage)
 		assert len(sender_dns)==1	#only one sender
 		assert len(receiver_dns)>=1	#one or more receivers
-		message= self.createmessage(timestamp, sender_dns[0], receiver_dns, text)
+		message= self.log.createMessage(timestamp, text, sender_dns[0], receiver_dns)
 		return message
 
 	def common_atributes_and_elements(self, xml):
@@ -82,7 +90,7 @@ class OfficialXMLParser(DECODER_BASECLASS):
 		
 	def invitation(self, xmlmessage):
 		timestamp, text, sender_dns, receiver_dns= self.common_atributes_and_elements(xmlmessage)
-		return ChatEvent(timestamp, text)
+		return self.log.createEvent(timestamp, text)
 	
 	
 	
