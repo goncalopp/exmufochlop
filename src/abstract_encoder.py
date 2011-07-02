@@ -1,7 +1,7 @@
-#if you're creating a encoder, your class must descend from const.DECODER_BASECLASS
+#if you're creating a encoder, your class must descend from const.ENCODER_BASECLASS
 
 #uncomment the following line
-#from const import DECODER_BASECLASS
+#from const import ENCODER_BASECLASS
 from chat_datatypes import *
 
 class ChatLogEncoder():
